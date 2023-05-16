@@ -16,6 +16,26 @@ impl NeuronLayer {
         let dim = vals.len();
         NeuronLayer { dim, vals }
     }
+
+    pub fn softmax(&self) -> NeuronLayer {
+        let exp_sum = self.vals.iter().map(|x| x.exp()).sum::<f64>();
+        NeuronLayer {
+            dim: self.dim,
+            vals: self.vals.iter().map(|x| x.exp() / exp_sum).collect(),
+        }
+    }
+
+    pub fn cross_entropy_loss(&self, expected: NeuronLayer) -> f64 {
+        let cross_entropy_fn = |expected: f64, actual: f64| {
+            -expected * actual.ln() - (1.0 - expected) * (1.0 - actual).ln()
+        };
+        expected
+            .vals
+            .iter()
+            .zip(self.vals.iter())
+            .map(|(e, a)| cross_entropy_fn(*e, *a))
+            .sum::<f64>()
+    }
 }
 
 #[derive(Debug)]

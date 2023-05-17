@@ -1,6 +1,6 @@
 use std::vec;
 
-use bamf::tensor::Tensor;
+use bamf::matrix::{Matrix, Multiply};
 use bamf::{NeuronLayer, WeightLayer};
 
 fn main() {
@@ -20,7 +20,8 @@ fn main() {
     println!("big_loss: {:?}", big_loss);
     println!("small_loss: {:?}", small_loss);
 
-    let data = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
-    let tensor = Tensor::new(vec![2, 2], data.into_iter().flatten().collect());
-    println!("tensor: {:?}", tensor);
+    let matrix = Matrix::new(vec![2, 2], vec![vec![1.0, 2.0], vec![3.0, 4.0]]);
+    let vector = vec![1.0, 2.0];
+    println!("product1: {:?}", matrix.multiply(&vector));
+    println!("product2: {:?}", matrix.transpose().multiply(&vector));
 }

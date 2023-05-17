@@ -1,4 +1,4 @@
-pub mod tensor;
+pub mod matrix;
 
 #[derive(Debug)]
 pub struct NeuronLayer {

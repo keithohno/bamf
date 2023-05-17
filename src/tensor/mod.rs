@@ -1,7 +1,3 @@
-use self::flatten::Node;
-
-pub mod flatten;
-
 #[derive(Debug)]
 pub struct Tensor {
     data: Vec<f64>,
@@ -10,7 +6,7 @@ pub struct Tensor {
 }
 
 impl Tensor {
-    pub fn new(dims: Vec<usize>, data: Node<f64>) -> Tensor {
+    pub fn new(dims: Vec<usize>, data: Vec<f64>) -> Tensor {
         let size = dims.iter().product::<usize>();
         let skips = dims
             .iter()
@@ -20,7 +16,6 @@ impl Tensor {
             })
             .collect::<Vec<usize>>();
 
-        let data = flatten::flatten(&data);
         assert!(data.len() == size);
         Tensor { data, dims, skips }
     }

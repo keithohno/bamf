@@ -1,4 +1,6 @@
-use bamf::tensor::flatten::{flatten, Node};
+use std::vec;
+
+use bamf::tensor::Tensor;
 use bamf::{NeuronLayer, WeightLayer};
 
 fn main() {
@@ -18,11 +20,7 @@ fn main() {
     println!("big_loss: {:?}", big_loss);
     println!("small_loss: {:?}", small_loss);
 
-    println!(
-        "flattened: {:?}",
-        flatten(&Node::from(vec![
-            Node::from(vec![1, 2]),
-            Node::from(vec![3, 4])
-        ]))
-    );
+    let data = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
+    let tensor = Tensor::new(vec![2, 2], data.into_iter().flatten().collect());
+    println!("tensor: {:?}", tensor);
 }

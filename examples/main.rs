@@ -1,8 +1,9 @@
+use bamf::tensor::flatten::{flatten, Node};
 use bamf::{NeuronLayer, WeightLayer};
 
 fn main() {
     let input = NeuronLayer::from_vec(vec![0.0, 1.0, 2.0]);
-    let weights: WeightLayer = WeightLayer::new(
+    let weights = WeightLayer::new(
         vec![vec![0.0, 1.0, 2.0], vec![3.0, 4.0, 5.0]],
         vec![5.0, 0.0],
     );
@@ -16,4 +17,12 @@ fn main() {
     println!("softmaxed: {:?}", softmaxed);
     println!("big_loss: {:?}", big_loss);
     println!("small_loss: {:?}", small_loss);
+
+    println!(
+        "flattened: {:?}",
+        flatten(&Node::from(vec![
+            Node::from(vec![1, 2]),
+            Node::from(vec![3, 4])
+        ]))
+    );
 }

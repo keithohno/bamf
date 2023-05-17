@@ -1,3 +1,5 @@
+pub mod tensor;
+
 #[derive(Debug)]
 pub struct NeuronLayer {
     dim: usize,

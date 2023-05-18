@@ -1,8 +1,8 @@
 #[derive(Debug)]
 pub struct Matrix {
-    data: Vec<f64>,
+    pub data: Vec<f64>,
     pub dims: Vec<usize>,
-    step: Vec<usize>,
+    pub step: Vec<usize>,
     size: usize,
 }
 
@@ -48,6 +48,10 @@ impl Matrix {
             step: self.step.clone(),
         }
     }
+
+    pub fn multiply_across(&self, vec: &Vec<f64>) -> Matrix {
+        self.to_view().multiply_across(vec)
+    }
 }
 
 impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
@@ -63,6 +67,18 @@ impl<'a> MatrixView<'a> {
             dims: vec![self.dims[1], self.dims[0]],
             step: vec![self.step[1], self.step[0]],
         }
+    }
+
+    pub fn multiply_across(&self, vec: &Vec<f64>) -> Matrix {
+        assert!(self.data.dims[1] == vec.len());
+        let mut result = Matrix::empty(self.dims.clone());
+        for i in 0..self.dims[0] {
+            for j in 0..self.dims[1] {
+                result.data[i * self.step[0] + j * self.step[1]] =
+                    self.data.data[i * self.step[0] + j * self.step[1]] * vec[i];
+            }
+        }
+        result
     }
 }
 

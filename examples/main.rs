@@ -1,7 +1,7 @@
 use std::vec;
 
 use bamf::matrix::{Matrix, Multiply};
-use bamf::{NeuronLayer, WeightLayer};
+use bamf::{NeuralNetwork, NeuronLayer, WeightLayer};
 
 fn main() {
     let input = NeuronLayer::from_vec(vec![0.0, 1.0, 2.0]);
@@ -14,8 +14,10 @@ fn main() {
     );
     let output = weights.forward(&input);
     let softmaxed = output.softmax();
-    let big_loss = softmaxed.cross_entropy_loss(&NeuronLayer::from_vec(vec![0.5, 0.5]));
-    let small_loss = softmaxed.cross_entropy_loss(&NeuronLayer::from_vec(vec![0.01, 0.99]));
+    let bad_target = NeuronLayer::from_vec(vec![0.5, 0.5]);
+    let good_target = NeuronLayer::from_vec(vec![0.01, 0.99]);
+    let big_loss = softmaxed.cross_entropy_loss(&bad_target);
+    let small_loss = softmaxed.cross_entropy_loss(&good_target);
     println!("input: {:?}", input);
     println!("weights: {:?}", weights);
     println!("output: {:?}", output);
@@ -27,4 +29,12 @@ fn main() {
     let vector = vec![1.0, 2.0];
     println!("product1: {:?}", matrix.multiply(&vector));
     println!("product2: {:?}", matrix.transpose().multiply(&vector));
+    println!("product3: {:?}", matrix.multiply_across(&vector));
+
+    let mut nn1 = NeuralNetwork::new(&weights, &input, bad_target);
+    nn1.forward();
+    println!("nn1: {:?}", nn1.backward());
+    let mut nn2 = NeuralNetwork::new(&weights, &input, good_target);
+    nn2.forward();
+    println!("nn2: {:?}", nn2.backward());
 }

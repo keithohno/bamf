@@ -45,7 +45,7 @@ impl NeuronLayer {
 #[derive(Debug)]
 pub struct WeightLayer {
     dim: (usize, usize),
-    weights: Matrix,
+    pub weights: Matrix,
     biases: Vec<f64>,
 }
 
@@ -66,16 +66,16 @@ impl WeightLayer {
 }
 
 pub struct NeuralNetwork<'a> {
-    layer: &'a WeightLayer,
+    pub layer: &'a mut WeightLayer,
     input: &'a NeuronLayer,
-    intermediates: Vec<NeuronLayer>,
+    pub intermediates: Vec<NeuronLayer>,
     target: NeuronLayer,
-    loss: f64,
+    pub loss: f64,
 }
 
 impl<'a> NeuralNetwork<'a> {
     pub fn new(
-        layer: &'a WeightLayer,
+        layer: &'a mut WeightLayer,
         input: &'a NeuronLayer,
         target: NeuronLayer,
     ) -> NeuralNetwork<'a> {
@@ -89,6 +89,7 @@ impl<'a> NeuralNetwork<'a> {
     }
 
     pub fn forward(&mut self) {
+        self.intermediates = Vec::new();
         self.intermediates.push(self.layer.forward(&self.input));
         self.intermediates
             .push(self.intermediates.last().unwrap().softmax());
@@ -107,5 +108,11 @@ impl<'a> NeuralNetwork<'a> {
             }
         }
         dw_dy.transpose().multiply_across(&dl_dy)
+    }
+
+    pub fn train(&mut self) {
+        self.forward();
+        let dw_dy = self.backward();
+        self.layer.weights = self.layer.weights.subtract(&dw_dy.transpose());
     }
 }

@@ -52,6 +52,15 @@ impl Matrix {
     pub fn multiply_across(&self, vec: &Vec<f64>) -> Matrix {
         self.to_view().multiply_across(vec)
     }
+
+    pub fn subtract(&self, other: &MatrixView) -> Matrix {
+        assert!(self.dims == other.dims);
+        let mut result = Matrix::empty(self.dims.clone());
+        for i in 0..self.size {
+            result.data[i] = self.data[i] - other.data.data[i];
+        }
+        result
+    }
 }
 
 impl Multiply<Vec<f64>, Vec<f64>> for Matrix {

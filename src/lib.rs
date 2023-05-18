@@ -1,3 +1,5 @@
+use matrix::{Matrix, Multiply};
+
 pub mod matrix;
 
 #[derive(Debug)]
@@ -27,7 +29,7 @@ impl NeuronLayer {
         }
     }
 
-    pub fn cross_entropy_loss(&self, expected: NeuronLayer) -> f64 {
+    pub fn cross_entropy_loss(&self, expected: &NeuronLayer) -> f64 {
         let cross_entropy_fn = |expected: f64, actual: f64| {
             -expected * actual.ln() - (1.0 - expected) * (1.0 - actual).ln()
         };
@@ -43,35 +45,22 @@ impl NeuronLayer {
 #[derive(Debug)]
 pub struct WeightLayer {
     dim: (usize, usize),
-    weights: Vec<Vec<f64>>,
+    weights: Matrix,
     biases: Vec<f64>,
 }
 
 impl WeightLayer {
-    pub fn new(weights: Vec<Vec<f64>>, biases: Vec<f64>) -> WeightLayer {
-        let dim_out = weights.len();
-        assert!(dim_out > 0);
-        assert!(biases.len() == dim_out);
-        let dim_in: usize = weights[0].len();
-        assert!(weights.iter().all(|v| v.len() == dim_in));
+    pub fn new(weights: Matrix, biases: Vec<f64>) -> WeightLayer {
+        assert!(weights.dims[1] == biases.len());
         WeightLayer {
-            dim: (dim_in, dim_out),
+            dim: (weights.dims[0], weights.dims[1]),
             weights,
             biases,
         }
     }
 
     pub fn forward(&self, input: &NeuronLayer) -> NeuronLayer {
-        assert!(input.dim == self.dim.0);
-        let mut output = NeuronLayer::new(self.dim.1);
-        for i in 0..self.dim.1 {
-            output.vals[i] = self.biases[i]
-                + self.weights[i]
-                    .iter()
-                    .zip(input.vals.iter())
-                    .map(|(w, x)| w * x)
-                    .sum::<f64>();
-        }
-        output
+        let product = self.weights.transpose().multiply(&input.vals);
+        NeuronLayer::from_vec(product)
     }
 }

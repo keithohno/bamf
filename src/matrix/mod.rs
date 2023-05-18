@@ -1,9 +1,19 @@
 #[derive(Debug)]
 pub struct Matrix {
     data: Vec<f64>,
-    dims: Vec<usize>,
+    pub dims: Vec<usize>,
     step: Vec<usize>,
     size: usize,
+}
+
+pub struct MatrixView<'a> {
+    data: &'a Matrix,
+    dims: Vec<usize>,
+    step: Vec<usize>,
+}
+
+pub trait Multiply<S, T> {
+    fn multiply(&self, arg: &S) -> T;
 }
 
 impl Matrix {
@@ -27,15 +37,13 @@ impl Matrix {
         }
     }
 
-    pub fn transpose(mut self) -> Matrix {
-        self.dims.reverse();
-        self.step.reverse();
-        self
+    pub fn transpose<'a>(&'a self) -> MatrixView {
+        MatrixView {
+            data: &self,
+            dims: self.dims.iter().rev().map(|x| *x).collect::<Vec<usize>>(),
+            step: self.step.iter().rev().map(|x| *x).collect::<Vec<usize>>(),
+        }
     }
-}
-
-pub trait Multiply<S, T> {
-    fn multiply(&self, arg: &S) -> T;
 }
 
 impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
@@ -45,6 +53,19 @@ impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
         for i in 0..self.dims[0] {
             for j in 0..self.dims[1] {
                 result[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
+            }
+        }
+        result
+    }
+}
+
+impl Multiply<Vec<f64>, Vec<f64>> for MatrixView<'_> {
+    fn multiply(&self, vec: &Vec<f64>) -> Vec<f64> {
+        assert!(self.dims[1] == vec.len());
+        let mut result = vec![0.0; self.dims[0]];
+        for i in 0..self.dims[0] {
+            for j in 0..self.dims[1] {
+                result[i] += self.data.data[i * self.step[0] + j * self.step[1]] * vec[j];
             }
         }
         result

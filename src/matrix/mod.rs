@@ -38,24 +38,31 @@ impl Matrix {
     }
 
     pub fn transpose<'a>(&'a self) -> MatrixView {
+        self.to_view().transpose()
+    }
+
+    pub fn to_view(&self) -> MatrixView {
         MatrixView {
             data: &self,
-            dims: self.dims.iter().rev().map(|x| *x).collect::<Vec<usize>>(),
-            step: self.step.iter().rev().map(|x| *x).collect::<Vec<usize>>(),
+            dims: self.dims.clone(),
+            step: self.step.clone(),
         }
     }
 }
 
 impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
     fn multiply(&self, vec: &Vec<f64>) -> Vec<f64> {
-        assert!(self.dims[1] == vec.len());
-        let mut result = vec![0.0; self.dims[0]];
-        for i in 0..self.dims[0] {
-            for j in 0..self.dims[1] {
-                result[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
-            }
+        self.to_view().multiply(vec)
+    }
+}
+
+impl<'a> MatrixView<'a> {
+    fn transpose(&self) -> MatrixView<'a> {
+        MatrixView {
+            data: self.data,
+            dims: vec![self.dims[1], self.dims[0]],
+            step: vec![self.step[1], self.step[0]],
         }
-        result
     }
 }
 

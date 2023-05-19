@@ -1,6 +1,6 @@
 use std::vec;
 
-use bamf::matrix::{Matrix, Multiply};
+use bamf::matrix::{Matrix, Multiply, Scale};
 use bamf::{NeuralNetwork, NeuronLayer, WeightLayer};
 
 fn main() {
@@ -29,7 +29,7 @@ fn main() {
     let vector = vec![1.0, 2.0];
     println!("product1: {:?}", matrix.multiply(&vector));
     println!("product2: {:?}", matrix.transpose().multiply(&vector));
-    println!("product3: {:?}", matrix.dot(&vector));
+    println!("product3: {:?}", matrix.scale(&vector));
 
     let mut nn1 = NeuralNetwork::new(&mut weights, &input, bad_target);
     nn1.forward();

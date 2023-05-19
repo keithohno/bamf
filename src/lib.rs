@@ -1,4 +1,4 @@
-use matrix::{Matrix, Multiply};
+use matrix::{Matrix, Multiply, Scale};
 use misc::subtract;
 
 pub mod matrix;
@@ -111,7 +111,7 @@ impl<'a> NeuralNetwork<'a> {
                 dw_dy.data[i * dw_dy.step[0] + j * dw_dy.step[1]] = self.input.vals[i]
             }
         }
-        dw_dy.transpose().dot(&dl_dy)
+        dw_dy.transpose().scale(&dl_dy)
     }
 
     pub fn train(&mut self) {

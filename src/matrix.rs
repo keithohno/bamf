@@ -10,6 +10,10 @@ pub trait Multiply<S, T> {
     fn multiply(&self, arg: &S) -> T;
 }
 
+pub trait Scale<S> {
+    fn scale(&self, arg: &S) -> Matrix;
+}
+
 impl Matrix {
     pub fn new(dims: Vec<usize>, data: Vec<Vec<f64>>) -> Matrix {
         let mut matrix = Matrix::empty(dims);
@@ -40,7 +44,31 @@ impl Matrix {
         }
     }
 
-    pub fn dot(&self, vec: &Vec<f64>) -> Matrix {
+    pub fn subtract(&self, other: &Matrix) -> Matrix {
+        assert!(self.dims == other.dims);
+        let mut result = Matrix::empty(self.dims.clone());
+        for i in 0..self.size {
+            result.data[i] = self.data[i] - other.data[i];
+        }
+        result
+    }
+}
+
+impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
+    fn multiply(&self, vec: &Vec<f64>) -> Vec<f64> {
+        assert!(self.dims[1] == vec.len());
+        let mut result = vec![0.0; self.dims[0]];
+        for i in 0..self.dims[0] {
+            for j in 0..self.dims[1] {
+                result[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
+            }
+        }
+        result
+    }
+}
+
+impl Scale<Vec<f64>> for Matrix {
+    fn scale(&self, vec: &Vec<f64>) -> Matrix {
         assert!(self.dims[0] == vec.len());
         let mut result = Matrix::empty(self.dims.clone());
         for i in 0..self.dims[0] {
@@ -51,24 +79,50 @@ impl Matrix {
         }
         result
     }
+}
 
-    pub fn subtract(&self, other: &Matrix) -> Matrix {
-        assert!(self.dims == other.dims);
-        let mut result = Matrix::empty(self.dims.clone());
-        for i in 0..self.size {
-            result.data[i] = self.data[i] - other.data[i];
-        }
-        result
+#[cfg(test)]
+mod tests {
+
+    use crate::matrix::{Matrix, Multiply, Scale};
+
+    #[test]
+    fn test_matrix_multiply() {
+        let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
+        let vec = vec![1.0, 2.0, 3.0];
+        let result = matrix.multiply(&vec);
+        assert_eq!(result, vec![14.0, 26.0]);
     }
 
-    pub fn multiply(&self, vec: &Vec<f64>) -> Vec<f64> {
-        assert!(self.dims[1] == vec.len());
-        let mut result = vec![0.0; self.dims[0]];
-        for i in 0..self.dims[0] {
-            for j in 0..self.dims[1] {
-                result[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
-            }
-        }
-        result
+    #[test]
+    fn test_matrix_scale() {
+        let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
+        let vec = vec![1.0, 2.0];
+        let result = matrix.scale(&vec);
+        assert_eq!(*result.data, vec![1.0, 2.0, 3.0, 6.0, 8.0, 10.0]);
+    }
+
+    #[test]
+    fn test_matrix_subtract() {
+        let matrix1 = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]]);
+        let matrix2 = Matrix::new(vec![2, 3], vec![vec![0.0, 1.0, 2.0], vec![3.0, 2.0, 1.0]]);
+        let result = matrix1.subtract(&matrix2);
+        assert_eq!(*result.data, vec![1.0, 1.0, 1.0, -1.0, 1.0, 3.0]);
+    }
+
+    #[test]
+    fn test_matrix_transpose() {
+        let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]]);
+        let result = matrix.transpose();
+        assert_eq!(*result.data, vec![1.0, 2.0, 3.0, 2.0, 3.0, 4.0]);
+        assert_eq!(result.dims, vec![3, 2]);
+    }
+
+    #[test]
+    fn test_matrix_transposed_multiply() {
+        let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]]);
+        let vec = vec![1.0, 2.0];
+        let result = matrix.transpose().multiply(&vec);
+        assert_eq!(result, [5.0, 8.0, 11.0]);
     }
 }

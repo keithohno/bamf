@@ -93,7 +93,11 @@ impl<'a> NeuralNetwork<'a> {
         self.intermediates.push(self.layer.forward(&self.input));
         self.intermediates
             .push(self.intermediates.last().unwrap().softmax());
-        self.loss = self.intermediates[1].cross_entropy_loss(&self.target);
+        self.loss = self
+            .intermediates
+            .last()
+            .unwrap()
+            .cross_entropy_loss(&self.target);
     }
 
     pub fn backward(&mut self) -> Matrix {
@@ -101,13 +105,13 @@ impl<'a> NeuralNetwork<'a> {
         let dvec = (0..self.input.vals.len())
             .map(|x| vec![self.input.vals[x]; self.target.vals.len()])
             .collect::<Vec<Vec<f64>>>();
-        let mut dw_dy = Matrix::new(vec![self.input.vals.len(), self.target.vals.len()], dvec);
+        let mut dw_dy = Matrix::empty(vec![self.input.vals.len(), self.target.vals.len()]);
         for i in 0..dw_dy.dims[0] {
             for j in 0..dw_dy.dims[1] {
                 dw_dy.data[i * dw_dy.step[0] + j * dw_dy.step[1]] = self.input.vals[i]
             }
         }
-        dw_dy.transpose().multiply_across(&dl_dy)
+        dw_dy.transpose().dot(&dl_dy)
     }
 
     pub fn train(&mut self) {

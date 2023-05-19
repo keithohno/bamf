@@ -29,7 +29,7 @@ fn main() {
     let vector = vec![1.0, 2.0];
     println!("product1: {:?}", matrix.multiply(&vector));
     println!("product2: {:?}", matrix.transpose().multiply(&vector));
-    println!("product3: {:?}", matrix.multiply_across(&vector));
+    println!("product3: {:?}", matrix.dot(&vector));
 
     let mut nn1 = NeuralNetwork::new(&mut weights, &input, bad_target);
     nn1.forward();

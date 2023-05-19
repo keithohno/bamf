@@ -1,4 +1,8 @@
+use matrix::{Matrix, Multiply};
+use misc::subtract;
+
 pub mod matrix;
+pub mod misc;
 
 #[derive(Debug)]
 pub struct NeuronLayer {
@@ -27,10 +31,8 @@ impl NeuronLayer {
         }
     }
 
-    pub fn cross_entropy_loss(&self, expected: NeuronLayer) -> f64 {
-        let cross_entropy_fn = |expected: f64, actual: f64| {
-            -expected * actual.ln() - (1.0 - expected) * (1.0 - actual).ln()
-        };
+    pub fn cross_entropy_loss(&self, expected: &NeuronLayer) -> f64 {
+        let cross_entropy_fn = |expected: f64, actual: f64| -expected * actual.ln();
         expected
             .vals
             .iter()
@@ -43,35 +45,74 @@ impl NeuronLayer {
 #[derive(Debug)]
 pub struct WeightLayer {
     dim: (usize, usize),
-    weights: Vec<Vec<f64>>,
+    pub weights: Matrix,
     biases: Vec<f64>,
 }
 
 impl WeightLayer {
-    pub fn new(weights: Vec<Vec<f64>>, biases: Vec<f64>) -> WeightLayer {
-        let dim_out = weights.len();
-        assert!(dim_out > 0);
-        assert!(biases.len() == dim_out);
-        let dim_in: usize = weights[0].len();
-        assert!(weights.iter().all(|v| v.len() == dim_in));
+    pub fn new(weights: Matrix, biases: Vec<f64>) -> WeightLayer {
+        assert!(weights.dims[1] == biases.len());
         WeightLayer {
-            dim: (dim_in, dim_out),
+            dim: (weights.dims[0], weights.dims[1]),
             weights,
             biases,
         }
     }
 
     pub fn forward(&self, input: &NeuronLayer) -> NeuronLayer {
-        assert!(input.dim == self.dim.0);
-        let mut output = NeuronLayer::new(self.dim.1);
-        for i in 0..self.dim.1 {
-            output.vals[i] = self.biases[i]
-                + self.weights[i]
-                    .iter()
-                    .zip(input.vals.iter())
-                    .map(|(w, x)| w * x)
-                    .sum::<f64>();
+        let product = self.weights.transpose().multiply(&input.vals);
+        NeuronLayer::from_vec(product)
+    }
+}
+
+pub struct NeuralNetwork<'a> {
+    pub layer: &'a mut WeightLayer,
+    input: &'a NeuronLayer,
+    pub intermediates: Vec<NeuronLayer>,
+    target: NeuronLayer,
+    pub loss: f64,
+}
+
+impl<'a> NeuralNetwork<'a> {
+    pub fn new(
+        layer: &'a mut WeightLayer,
+        input: &'a NeuronLayer,
+        target: NeuronLayer,
+    ) -> NeuralNetwork<'a> {
+        NeuralNetwork {
+            layer,
+            input,
+            intermediates: Vec::new(),
+            target,
+            loss: 0.0,
         }
-        output
+    }
+
+    pub fn forward(&mut self) {
+        self.intermediates = Vec::new();
+        self.intermediates.push(self.layer.forward(&self.input));
+        self.intermediates
+            .push(self.intermediates.last().unwrap().softmax());
+        self.loss = self.intermediates[1].cross_entropy_loss(&self.target);
+    }
+
+    pub fn backward(&mut self) -> Matrix {
+        let dl_dy = subtract(&self.intermediates.last().unwrap().vals, &self.target.vals);
+        let dvec = (0..self.input.vals.len())
+            .map(|x| vec![self.input.vals[x]; self.target.vals.len()])
+            .collect::<Vec<Vec<f64>>>();
+        let mut dw_dy = Matrix::new(vec![self.input.vals.len(), self.target.vals.len()], dvec);
+        for i in 0..dw_dy.dims[0] {
+            for j in 0..dw_dy.dims[1] {
+                dw_dy.data[i * dw_dy.step[0] + j * dw_dy.step[1]] = self.input.vals[i]
+            }
+        }
+        dw_dy.transpose().multiply_across(&dl_dy)
+    }
+
+    pub fn train(&mut self) {
+        self.forward();
+        let dw_dy = self.backward();
+        self.layer.weights = self.layer.weights.subtract(&dw_dy.transpose());
     }
 }

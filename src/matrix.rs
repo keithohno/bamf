@@ -65,7 +65,7 @@ impl Multiply<Vector, Vector> for Matrix {
                 res[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
             }
         }
-        Vector::from_vec(res)
+        Vector::from(res)
     }
 }
 
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test_matrix_multiply() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
-        let vec = Vector::from_vec(vec![1.0, 2.0, 3.0]);
+        let vec = Vector::from(vec![1.0, 2.0, 3.0]);
         let result = matrix.multiply(&vec);
         assert_eq!(result, vec![14.0, 26.0]);
     }
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_matrix_scale() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
-        let vec = Vector::from_vec(vec![1.0, 2.0]);
+        let vec = Vector::from(vec![1.0, 2.0]);
         let result = matrix.scale(&vec);
         assert_eq!(*result.data, vec![1.0, 2.0, 3.0, 6.0, 8.0, 10.0]);
     }
@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn test_matrix_transposed_multiply() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]]);
-        let vec = Vector::from_vec(vec![1.0, 2.0]);
+        let vec = Vector::from(vec![1.0, 2.0]);
         let result = matrix.transpose().multiply(&vec);
         assert_eq!(result, vec![5.0, 8.0, 11.0]);
     }

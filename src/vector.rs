@@ -7,11 +7,6 @@ pub struct Vector {
 }
 
 impl Vector {
-    pub fn from_vec(vals: Vec<f64>) -> Vector {
-        let dim = vals.len();
-        Vector { dim, vals }
-    }
-
     pub fn len(&self) -> usize {
         self.dim
     }
@@ -41,8 +36,30 @@ impl Vector {
             .iter()
             .zip(vec2.vals.iter())
             .map(|(x, y)| x - y)
-            .collect();
-        Vector::from_vec(res)
+            .collect::<Vec<f64>>();
+        Vector::from(res)
+    }
+
+    pub fn add(&self, vec2: &Vector) -> Vector {
+        assert!(self.dim == vec2.dim);
+        let res = self
+            .vals
+            .iter()
+            .zip(vec2.vals.iter())
+            .map(|(x, y)| x + y)
+            .collect::<Vec<f64>>();
+        Vector::from(res)
+    }
+
+    pub fn scale(&self, vec2: &Vector) -> Vector {
+        assert!(self.dim == vec2.dim);
+        let res = self
+            .vals
+            .iter()
+            .zip(vec2.vals.iter())
+            .map(|(x, y)| x * y)
+            .collect::<Vec<f64>>();
+        Vector::from(res)
     }
 }
 
@@ -57,5 +74,12 @@ impl Index<usize> for Vector {
 impl PartialEq<Vec<f64>> for Vector {
     fn eq(&self, vec2: &Vec<f64>) -> bool {
         self.dim == vec2.len() && self.vals.iter().zip(vec2.iter()).all(|(x, y)| x == y)
+    }
+}
+
+impl From<Vec<f64>> for Vector {
+    fn from(vals: Vec<f64>) -> Vector {
+        let dim = vals.len();
+        Vector { dim, vals }
     }
 }

@@ -21,7 +21,15 @@ impl WeightLayer {
     }
 
     pub fn forward(&self, input: &Vector) -> Vector {
-        self.weights.transpose().multiply(&input).add(&self.biases)
+        self.weights
+            .transpose()
+            .multiply(&input)
+            .add(&self.biases)
+            // ReLU
+            .into_iter()
+            .map(|x| if x > 0.0 { x } else { 0.0 })
+            .collect::<Vec<f64>>()
+            .into()
     }
 }
 
@@ -59,9 +67,12 @@ impl<'a> NeuralNetwork<'a> {
     pub fn backward(&mut self) -> (Matrix, Vector) {
         let dl_dy = self.intermediates.last().unwrap().subtract(&self.target);
         let mut dy_dw = Matrix::empty(vec![self.input.vals.len(), self.target.vals.len()]);
-        for i in 0..dy_dw.dims[0] {
-            for j in 0..dy_dw.dims[1] {
-                dy_dw.data[i * dy_dw.step[0] + j * dy_dw.step[1]] = self.input.vals[i]
+        for j in 0..dy_dw.dims[1] {
+            // ReLU derivative is 0 for (,0] and 1 for (0,)
+            if self.intermediates[0].vals[j] > 0.0 {
+                for i in 0..dy_dw.dims[0] {
+                    dy_dw.data[i * dy_dw.step[0] + j * dy_dw.step[1]] = self.input.vals[i]
+                }
             }
         }
         let dy_db = Vector::from(vec![1.0; self.target.vals.len()]);

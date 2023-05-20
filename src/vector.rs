@@ -83,3 +83,12 @@ impl From<Vec<f64>> for Vector {
         Vector { dim, vals }
     }
 }
+
+impl IntoIterator for Vector {
+    type Item = f64;
+    type IntoIter = std::vec::IntoIter<f64>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.vals.into_iter()
+    }
+}

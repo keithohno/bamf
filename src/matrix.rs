@@ -5,7 +5,7 @@ pub struct Matrix {
     pub data: Box<Vec<f64>>,
     pub dims: Vec<usize>,
     pub step: Vec<usize>,
-    size: usize,
+    pub size: usize,
 }
 
 pub trait Multiply<S, T> {

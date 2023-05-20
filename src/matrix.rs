@@ -1,3 +1,5 @@
+use crate::vector::Vector;
+
 #[derive(Debug)]
 pub struct Matrix {
     pub data: Box<Vec<f64>>,
@@ -54,27 +56,27 @@ impl Matrix {
     }
 }
 
-impl Multiply<Vec<f64>, Vec<f64>> for Matrix {
-    fn multiply(&self, vec: &Vec<f64>) -> Vec<f64> {
+impl Multiply<Vector, Vector> for Matrix {
+    fn multiply(&self, vec: &Vector) -> Vector {
         assert!(self.dims[1] == vec.len());
-        let mut result = vec![0.0; self.dims[0]];
+        let mut res = vec![0.0; self.dims[0]];
         for i in 0..self.dims[0] {
             for j in 0..self.dims[1] {
-                result[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
+                res[i] += self.data[i * self.step[0] + j * self.step[1]] * vec[j];
             }
         }
-        result
+        Vector::from_vec(res)
     }
 }
 
-impl Scale<Vec<f64>> for Matrix {
-    fn scale(&self, vec: &Vec<f64>) -> Matrix {
+impl Scale<Vector> for Matrix {
+    fn scale(&self, vec: &Vector) -> Matrix {
         assert!(self.dims[0] == vec.len());
         let mut result = Matrix::empty(self.dims.clone());
         for i in 0..self.dims[0] {
             for j in 0..self.dims[1] {
                 result.data[i * self.step[0] + j * self.step[1]] =
-                    self.data[i * self.step[0] + j * self.step[1]] * vec[i];
+                    self.data[i * self.step[0] + j * self.step[1]] * vec.vals[i];
             }
         }
         result
@@ -85,11 +87,12 @@ impl Scale<Vec<f64>> for Matrix {
 mod tests {
 
     use crate::matrix::{Matrix, Multiply, Scale};
+    use crate::vector::Vector;
 
     #[test]
     fn test_matrix_multiply() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
-        let vec = vec![1.0, 2.0, 3.0];
+        let vec = Vector::from_vec(vec![1.0, 2.0, 3.0]);
         let result = matrix.multiply(&vec);
         assert_eq!(result, vec![14.0, 26.0]);
     }
@@ -97,7 +100,7 @@ mod tests {
     #[test]
     fn test_matrix_scale() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![3.0, 4.0, 5.0]]);
-        let vec = vec![1.0, 2.0];
+        let vec = Vector::from_vec(vec![1.0, 2.0]);
         let result = matrix.scale(&vec);
         assert_eq!(*result.data, vec![1.0, 2.0, 3.0, 6.0, 8.0, 10.0]);
     }
@@ -121,8 +124,8 @@ mod tests {
     #[test]
     fn test_matrix_transposed_multiply() {
         let matrix = Matrix::new(vec![2, 3], vec![vec![1.0, 2.0, 3.0], vec![2.0, 3.0, 4.0]]);
-        let vec = vec![1.0, 2.0];
+        let vec = Vector::from_vec(vec![1.0, 2.0]);
         let result = matrix.transpose().multiply(&vec);
-        assert_eq!(result, [5.0, 8.0, 11.0]);
+        assert_eq!(result, vec![5.0, 8.0, 11.0]);
     }
 }

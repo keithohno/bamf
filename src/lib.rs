@@ -7,19 +7,19 @@ pub mod matrix;
 pub mod vector;
 
 #[derive(Debug)]
-pub struct WeightLayer {
+pub struct Layer {
     pub weights: Matrix,
     pub biases: Vector,
 }
 
-impl WeightLayer {
-    pub fn new<V>(weights: Matrix, biases: V) -> WeightLayer
+impl Layer {
+    pub fn new<V>(weights: Matrix, biases: V) -> Layer
     where
         V: Into<Vector>,
     {
         let biases = biases.into();
         assert!(weights.dims[1] == biases.len());
-        WeightLayer { weights, biases }
+        Layer { weights, biases }
     }
 
     pub fn forward(&self, input: &Vector) -> Vector {
@@ -60,28 +60,29 @@ impl WeightLayer {
     }
 }
 
-pub struct NeuralNetwork<'a> {
-    pub layer: &'a mut WeightLayer,
-    input: &'a Vector,
+pub struct NeuralNetwork {
+    pub layers: Vec<Layer>,
     pub intermediates: Vec<Vector>,
     target: Vector,
     pub loss: f64,
 }
 
-impl<'a> NeuralNetwork<'a> {
-    pub fn new(layer: &'a mut WeightLayer, input: &'a Vector, target: Vector) -> NeuralNetwork<'a> {
+impl NeuralNetwork {
+    pub fn new(layers: Vec<Layer>, target: Vector) -> NeuralNetwork {
         NeuralNetwork {
-            layer,
-            input,
+            layers,
             intermediates: Vec::new(),
             target,
             loss: 0.0,
         }
     }
 
-    pub fn forward(&mut self) {
-        self.intermediates = Vec::new();
-        self.intermediates.push(self.layer.forward(&self.input));
+    pub fn forward(&mut self, input: Vector) {
+        self.intermediates = vec![input];
+        for layer in &self.layers {
+            let output = layer.forward(self.intermediates.last().unwrap());
+            self.intermediates.push(output);
+        }
         self.intermediates
             .push(self.intermediates.last().unwrap().softmax());
         self.loss = self
@@ -91,18 +92,27 @@ impl<'a> NeuralNetwork<'a> {
             .cross_entropy_loss(&self.target);
     }
 
-    pub fn backward(&mut self) -> (Matrix, Vector) {
-        let dl_dz = self.intermediates.last().unwrap().subtract(&self.target);
-        let (_, dl_dw, dl_db) =
-            self.layer
-                .backward(&dl_dz, self.input, None, Some(&self.intermediates[0]));
-        (dl_dw, dl_db)
+    pub fn backward(&mut self) -> Vec<(Matrix, Vector)> {
+        let mut dl_dz = self.intermediates.pop().unwrap().subtract(&self.target);
+        let mut gradients = Vec::new();
+        for i in (0..self.layers.len()).rev() {
+            let input = &self.intermediates[i];
+            let output = &self.intermediates[i + 1];
+            let layer = &self.layers[i];
+            let (dl_dx, dl_dw, dl_db) = layer.backward(&dl_dz, input, None, Some(output));
+            gradients.push((dl_dw, dl_db));
+            dl_dz = dl_dx;
+        }
+        gradients.reverse();
+        gradients
     }
 
-    pub fn train(&mut self) {
-        self.forward();
-        let (dl_dw, dl_db) = self.backward();
-        self.layer.weights = self.layer.weights.subtract(&dl_dw);
-        self.layer.biases = self.layer.biases.subtract(&dl_db);
+    pub fn train(&mut self, input: Vector) {
+        self.forward(input);
+        let gradients = self.backward();
+        for (i, (dl_dw, dl_db)) in gradients.iter().enumerate() {
+            self.layers[i].weights = self.layers[i].weights.subtract(&dl_dw);
+            self.layers[i].biases = self.layers[i].biases.subtract(&dl_db);
+        }
     }
 }

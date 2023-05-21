@@ -2,11 +2,11 @@ use std::vec;
 
 use bamf::matrix::{Matrix, Multiply, Scale};
 use bamf::vector::Vector;
-use bamf::{NeuralNetwork, WeightLayer};
+use bamf::{Layer, NeuralNetwork};
 
 fn main() {
     let input = Vector::from(vec![0.0, 1.0, 2.0]);
-    let mut weights = WeightLayer::new(
+    let weights = Layer::new(
         Matrix::new(
             vec![3, 2],
             vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]],
@@ -32,31 +32,24 @@ fn main() {
     println!("product2: {:?}", matrix.transpose().multiply(&vector));
     println!("product3: {:?}", matrix.scale(&vector));
 
-    let mut nn1 = NeuralNetwork::new(&mut weights, &input, bad_target);
-    nn1.forward();
-    println!("nn1: {:?}", nn1.backward());
-    let mut nn2 = NeuralNetwork::new(&mut weights, &input, good_target);
-    nn2.forward();
-    println!("nn2: {:?}", nn2.backward());
-
     repeat_nn_single_input();
 }
 
 fn repeat_nn_single_input() {
-    let mut weights = WeightLayer::new(
+    let weights = Layer::new(
         Matrix::new(
             vec![3, 2],
             vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]],
         ),
         vec![5.0, 0.0],
     );
-    let input = Vector::from(vec![0.0, 1.0, 2.0]);
-    let mut nn1 = NeuralNetwork::new(&mut weights, &input, Vector::from(vec![0.0, 1.0]));
+    let mut nn1 = NeuralNetwork::new(vec![weights], Vector::from(vec![0.0, 1.0]));
     for _ in 0..100 {
-        nn1.train();
+        let input = Vector::from(vec![0.0, 1.0, 2.0]);
+        nn1.train(input);
     }
     println!("loss: {:?}", nn1.loss);
-    println!("weights: {:?}", nn1.layer.weights);
-    println!("biases: {:?}", nn1.layer.biases);
+    println!("weights: {:?}", nn1.layers[0].weights);
+    println!("biases: {:?}", nn1.layers[0].biases);
     println!("output: {:?}", nn1.intermediates.last().unwrap());
 }

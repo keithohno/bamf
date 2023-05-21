@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::{ops::Index, slice::Iter};
 
 #[derive(Debug, PartialEq)]
 pub struct Vector {
@@ -60,6 +60,10 @@ impl Vector {
             .map(|(x, y)| x * y)
             .collect::<Vec<f64>>();
         Vector::from(res)
+    }
+
+    pub fn iter(&self) -> Iter<f64> {
+        return self.vals.iter();
     }
 }
 

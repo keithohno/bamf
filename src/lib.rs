@@ -31,6 +31,37 @@ impl WeightLayer {
             .collect::<Vec<f64>>()
             .into()
     }
+
+    /// Computes the gradient of the loss wrt the input of the layer (x), the weights (w), and the biases (b).
+    ///
+    /// Returns the tuple (dl_dx, dl_dw, dl_db)
+    ///
+    /// # Arguments
+    ///
+    /// * `dl_dy` - gradient of loss wrt output of the layer (y)
+    /// * `x` - input to the layer
+    /// * `y` - output of the layer
+    fn backward(&self, dl_dy: &Vector, x: &Vector, y: &Vector) -> (Vector, Matrix, Vector) {
+        let dl_dx = self.weights.multiply(&dl_dy);
+        let dl_db = Vector::from(
+            y.iter()
+                // ReLU
+                .map(|i| if *i > 0.0 { 1.0 } else { 0.0 })
+                .zip(dl_dy.iter())
+                .map(|(i, j)| i * j)
+                .collect::<Vec<f64>>(),
+        );
+        let mut dl_dw = Matrix::empty(self.weights.dims.clone());
+        for j in 0..self.weights.dims[1] {
+            // ReLU
+            if y[j] > 0.0 {
+                for i in 0..self.weights.dims[0] {
+                    *dl_dw.get_mut(i, j) = x[i] * dl_dy[j];
+                }
+            }
+        }
+        (dl_dx, dl_dw, dl_db)
+    }
 }
 
 pub struct NeuralNetwork<'a> {
@@ -66,25 +97,16 @@ impl<'a> NeuralNetwork<'a> {
 
     pub fn backward(&mut self) -> (Matrix, Vector) {
         let dl_dy = self.intermediates.last().unwrap().subtract(&self.target);
-        let mut dy_dw = Matrix::empty(vec![self.input.vals.len(), self.target.vals.len()]);
-        for j in 0..dy_dw.dims[1] {
-            // ReLU derivative is 0 for (,0] and 1 for (0,)
-            if self.intermediates[0].vals[j] > 0.0 {
-                for i in 0..dy_dw.dims[0] {
-                    dy_dw.data[i * dy_dw.step[0] + j * dy_dw.step[1]] = self.input.vals[i]
-                }
-            }
-        }
-        let dy_db = Vector::from(vec![1.0; self.target.vals.len()]);
-        let dl_dw = dy_dw.transpose().scale(&dl_dy);
-        let dl_db = dy_db.scale(&dl_dy);
+        let (dl_dx, dl_dw, dl_db) = self
+            .layer
+            .backward(&dl_dy, self.input, &self.intermediates[0]);
         (dl_dw, dl_db)
     }
 
     pub fn train(&mut self) {
         self.forward();
         let (dl_dw, dl_db) = self.backward();
-        self.layer.weights = self.layer.weights.subtract(&dl_dw.transpose());
+        self.layer.weights = self.layer.weights.subtract(&dl_dw);
         self.layer.biases = self.layer.biases.subtract(&dl_db);
     }
 }

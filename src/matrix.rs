@@ -37,6 +37,14 @@ impl Matrix {
         }
     }
 
+    pub fn get(&self, i: usize, j: usize) -> f64 {
+        self.data[i * self.step[0] + j * self.step[1]]
+    }
+
+    pub fn get_mut(&mut self, i: usize, j: usize) -> &mut f64 {
+        &mut self.data[i * self.step[0] + j * self.step[1]]
+    }
+
     pub fn transpose(&self) -> Matrix {
         Matrix {
             data: self.data.clone(),

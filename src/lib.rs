@@ -1,9 +1,11 @@
 use activation::RELU;
 use matrix::{Matrix, Multiply};
+use ops::Scale;
 use vector::Vector;
 
 pub mod activation;
 pub mod matrix;
+pub mod ops;
 pub mod vector;
 
 #[derive(Debug)]
@@ -111,8 +113,8 @@ impl NeuralNetwork {
         self.forward(input);
         let gradients = self.backward();
         for (i, (dl_dw, dl_db)) in gradients.iter().enumerate() {
-            self.layers[i].weights = self.layers[i].weights.subtract(&dl_dw);
-            self.layers[i].biases = self.layers[i].biases.subtract(&dl_db);
+            self.layers[i].weights = self.layers[i].weights.subtract(&dl_dw.scale(0.1));
+            self.layers[i].biases = self.layers[i].biases.subtract(&dl_db.scale(0.1));
         }
     }
 }

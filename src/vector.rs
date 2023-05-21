@@ -1,3 +1,4 @@
+use crate::ops::Scale;
 use std::{ops::Index, slice::Iter};
 
 #[derive(Debug, PartialEq)]
@@ -51,17 +52,6 @@ impl Vector {
         Vector::from(res)
     }
 
-    pub fn scale(&self, vec2: &Vector) -> Vector {
-        assert!(self.dim == vec2.dim);
-        let res = self
-            .vals
-            .iter()
-            .zip(vec2.vals.iter())
-            .map(|(x, y)| x * y)
-            .collect::<Vec<f64>>();
-        Vector::from(res)
-    }
-
     pub fn iter(&self) -> Iter<f64> {
         return self.vals.iter();
     }
@@ -94,5 +84,25 @@ impl IntoIterator for Vector {
 
     fn into_iter(self) -> Self::IntoIter {
         self.vals.into_iter()
+    }
+}
+
+impl Scale<&Vector> for Vector {
+    fn scale(&self, vec2: &Vector) -> Vector {
+        assert!(self.dim == vec2.dim);
+        let res = self
+            .vals
+            .iter()
+            .zip(vec2.vals.iter())
+            .map(|(x, y)| x * y)
+            .collect::<Vec<f64>>();
+        Vector::from(res)
+    }
+}
+
+impl Scale<f64> for Vector {
+    fn scale(&self, c: f64) -> Vector {
+        let res = self.vals.iter().map(|x| x * c).collect::<Vec<f64>>();
+        Vector::from(res)
     }
 }

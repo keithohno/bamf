@@ -99,7 +99,7 @@ impl Scale<f64> for Matrix {
 #[cfg(test)]
 mod tests {
 
-    use crate::matrix::{Matrix, Multiply, Scale};
+    use super::{Matrix, Multiply, Scale};
     use crate::vector::Vector;
 
     #[test]

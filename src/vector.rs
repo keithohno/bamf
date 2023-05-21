@@ -106,3 +106,71 @@ impl Scale<f64> for Vector {
         Vector::from(res)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Vector;
+    use crate::ops::Scale;
+
+    const EPSILON: f64 = 0.00001;
+
+    #[test]
+    fn test_subtract() {
+        let vec1 = Vector::from(vec![2.0, 1.0, 2.0]);
+        let vec2 = Vector::from(vec![1.2, -2.5, 3.0]);
+        let expected = Vector::from(vec![0.8, 3.5, -1.0]);
+        assert_eq!(vec1.subtract(&vec2), expected);
+    }
+
+    #[test]
+    fn test_add() {
+        let vec1 = Vector::from(vec![2.0, 3.0, -2.0]);
+        let vec2 = Vector::from(vec![1.2, -2.5, -3.1]);
+        let expected = Vector::from(vec![3.2, 0.5, -5.1]);
+        assert_eq!(vec1.add(&vec2), expected);
+    }
+
+    #[test]
+    fn test_scale_scalar() {
+        let vec = Vector::from(vec![2.0, 3.0, -1.5]);
+        let result = vec.scale(0.3);
+        let expected = Vector::from(vec![0.6, 0.9, -0.45]);
+        for (r, e) in result.iter().zip(expected.iter()) {
+            assert!((r - e).abs() < EPSILON);
+        }
+    }
+
+    #[test]
+    fn test_scale_vector() {
+        let vec1 = Vector::from(vec![1.0, 3.0, -1.5]);
+        let vec2 = Vector::from(vec![-0.5, 4.0, -0.6]);
+        let result = vec1.scale(&vec2);
+        let expected = Vector::from(vec![-0.5, 12.0, 0.9]);
+        for (r, e) in result.iter().zip(expected.iter()) {
+            assert!((r - e).abs() < EPSILON);
+        }
+    }
+
+    #[test]
+    fn test_softmax() {
+        let vec = Vector::from(vec![-1.0, 0.0, 0.5]);
+        let result = vec.softmax();
+        let expected = Vector::from(vec![
+            0.12195165230972886,
+            0.3314989604240915,
+            0.5465493872661796,
+        ]);
+        for (r, e) in result.iter().zip(expected.iter()) {
+            assert!((r - e).abs() < EPSILON);
+        }
+    }
+
+    #[test]
+    fn test_cross_entropy_loss() {
+        let vec = Vector::from(vec![0.1, 0.3, 0.6]);
+        let target = Vector::from(vec![0.0, 0.0, 1.0]);
+        let result = vec.cross_entropy_loss(&target);
+        let expected = 0.510825623765990;
+        assert!((result - expected).abs() < EPSILON);
+    }
+}

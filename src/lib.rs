@@ -1,6 +1,8 @@
-use matrix::{Matrix, Multiply, Scale};
+use activation::RELU;
+use matrix::{Matrix, Multiply};
 use vector::Vector;
 
+pub mod activation;
 pub mod matrix;
 pub mod vector;
 
@@ -21,15 +23,10 @@ impl WeightLayer {
     }
 
     pub fn forward(&self, input: &Vector) -> Vector {
-        self.weights
-            .transpose()
-            .multiply(&input)
-            .add(&self.biases)
-            // ReLU
-            .into_iter()
-            .map(|x| if x > 0.0 { x } else { 0.0 })
-            .collect::<Vec<f64>>()
-            .into()
+        activation::apply(
+            self.weights.transpose().multiply(&input).add(&self.biases),
+            RELU,
+        )
     }
 
     /// Computes the gradient of the loss wrt the input of the layer (x), the weights (w), and the biases (b).
@@ -38,28 +35,27 @@ impl WeightLayer {
     ///
     /// # Arguments
     ///
-    /// * `dl_dy` - gradient of loss wrt output of the layer (y)
+    /// * `dl_dz` - gradient of loss wrt output of the layer (z)
     /// * `x` - input to the layer
-    /// * `y` - output of the layer
-    fn backward(&self, dl_dy: &Vector, x: &Vector, y: &Vector) -> (Vector, Matrix, Vector) {
+    /// * `y` - output of weight multiplication, input to activation
+    /// * `z` - output of the layer
+    fn backward(
+        &self,
+        dl_dz: &Vector,
+        x: &Vector,
+        y: Option<&Vector>,
+        z: Option<&Vector>,
+    ) -> (Vector, Matrix, Vector) {
+        let dl_dy = activation::backwards(dl_dz, y, z, RELU);
+
         let dl_dx = self.weights.multiply(&dl_dy);
-        let dl_db = Vector::from(
-            y.iter()
-                // ReLU
-                .map(|i| if *i > 0.0 { 1.0 } else { 0.0 })
-                .zip(dl_dy.iter())
-                .map(|(i, j)| i * j)
-                .collect::<Vec<f64>>(),
-        );
         let mut dl_dw = Matrix::empty(self.weights.dims.clone());
-        for j in 0..self.weights.dims[1] {
-            // ReLU
-            if y[j] > 0.0 {
-                for i in 0..self.weights.dims[0] {
-                    *dl_dw.get_mut(i, j) = x[i] * dl_dy[j];
-                }
+        for i in 0..self.weights.dims[0] {
+            for j in 0..self.weights.dims[1] {
+                *dl_dw.get_mut(i, j) = x[i] * dl_dy[j];
             }
         }
+        let dl_db = dl_dy;
         (dl_dx, dl_dw, dl_db)
     }
 }
@@ -96,10 +92,10 @@ impl<'a> NeuralNetwork<'a> {
     }
 
     pub fn backward(&mut self) -> (Matrix, Vector) {
-        let dl_dy = self.intermediates.last().unwrap().subtract(&self.target);
-        let (dl_dx, dl_dw, dl_db) = self
-            .layer
-            .backward(&dl_dy, self.input, &self.intermediates[0]);
+        let dl_dz = self.intermediates.last().unwrap().subtract(&self.target);
+        let (_, dl_dw, dl_db) =
+            self.layer
+                .backward(&dl_dz, self.input, None, Some(&self.intermediates[0]));
         (dl_dw, dl_db)
     }
 

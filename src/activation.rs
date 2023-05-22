@@ -33,7 +33,7 @@ pub fn apply<T>(vec: Vector, _: T) -> Vector
 where
     T: Activation,
 {
-    vec.vals
+    vec.data
         .iter()
         .map(|x| T::apply(*x))
         .collect::<Vec<f64>>()

@@ -79,7 +79,7 @@ impl NeuralNetwork {
         }
     }
 
-    pub fn forward(&mut self, input: Vector) {
+    pub fn forward(&mut self, input: Vector) -> &Vector {
         self.intermediates = vec![input];
         for layer in &self.layers {
             let output = layer.forward(self.intermediates.last().unwrap());
@@ -87,6 +87,7 @@ impl NeuralNetwork {
         }
         self.intermediates
             .push(self.intermediates.last().unwrap().softmax());
+        return self.intermediates.last().unwrap();
     }
 
     pub fn backward(&mut self, target: &Vector) -> Vec<(Matrix, Vector)> {

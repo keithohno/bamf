@@ -24,6 +24,10 @@ impl Layer {
         Layer { weights, biases }
     }
 
+    pub fn random(dims: (usize, usize), bounds: (f64, f64)) -> Layer {
+        Layer::new(Matrix::random(dims, bounds), Vector::random(dims.1, bounds))
+    }
+
     pub fn forward(&self, input: &Vector) -> Vector {
         activation::apply(
             self.weights.transpose().multiply(&input).add(&self.biases),

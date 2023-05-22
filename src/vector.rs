@@ -17,7 +17,7 @@ impl Vector {
         }
     }
 
-    pub fn random(size: (usize), bounds: (f64, f64)) -> Vector {
+    pub fn random(size: usize, bounds: (f64, f64)) -> Vector {
         let mut result = Vector::zero(size);
         let range = bounds.1 - bounds.0;
         for i in 0..result.size {

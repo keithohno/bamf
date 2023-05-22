@@ -69,17 +69,13 @@ impl Layer {
 pub struct NeuralNetwork {
     pub layers: Vec<Layer>,
     pub intermediates: Vec<Vector>,
-    target: Vector,
-    pub loss: f64,
 }
 
 impl NeuralNetwork {
-    pub fn new(layers: Vec<Layer>, target: Vector) -> NeuralNetwork {
+    pub fn new(layers: Vec<Layer>) -> NeuralNetwork {
         NeuralNetwork {
             layers,
             intermediates: Vec::new(),
-            target,
-            loss: 0.0,
         }
     }
 
@@ -91,15 +87,10 @@ impl NeuralNetwork {
         }
         self.intermediates
             .push(self.intermediates.last().unwrap().softmax());
-        self.loss = self
-            .intermediates
-            .last()
-            .unwrap()
-            .cross_entropy_loss(&self.target);
     }
 
-    pub fn backward(&mut self) -> Vec<(Matrix, Vector)> {
-        let mut dl_dz = self.intermediates.pop().unwrap().subtract(&self.target);
+    pub fn backward(&mut self, target: &Vector) -> Vec<(Matrix, Vector)> {
+        let mut dl_dz = self.intermediates.pop().unwrap().subtract(target);
         let mut gradients = Vec::new();
         for i in (0..self.layers.len()).rev() {
             let input = &self.intermediates[i];
@@ -113,12 +104,21 @@ impl NeuralNetwork {
         gradients
     }
 
-    pub fn train(&mut self, input: Vector) {
+    pub fn loss(&self, target: &Vector) -> f64 {
+        self.intermediates
+            .last()
+            .unwrap()
+            .cross_entropy_loss(target)
+    }
+
+    pub fn train(&mut self, input: Vector, target: &Vector) -> f64 {
         self.forward(input);
-        let gradients = self.backward();
+        let loss = self.loss(target);
+        let gradients = self.backward(target);
         for (i, (dl_dw, dl_db)) in gradients.iter().enumerate() {
             self.layers[i].weights = self.layers[i].weights.subtract(&dl_dw.scale(0.1));
             self.layers[i].biases = self.layers[i].biases.subtract(&dl_db.scale(0.1));
         }
+        loss
     }
 }

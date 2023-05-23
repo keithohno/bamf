@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::{ops::Index, slice::Iter};
 
 #[derive(Debug, PartialEq)]
 pub struct Vector {
@@ -61,6 +61,10 @@ impl Vector {
             .collect::<Vec<f64>>();
         Vector::from(res)
     }
+
+    pub fn iter(&self) -> Iter<f64> {
+        return self.vals.iter();
+    }
 }
 
 impl Index<usize> for Vector {
@@ -81,5 +85,14 @@ impl From<Vec<f64>> for Vector {
     fn from(vals: Vec<f64>) -> Vector {
         let dim = vals.len();
         Vector { dim, vals }
+    }
+}
+
+impl IntoIterator for Vector {
+    type Item = f64;
+    type IntoIter = std::vec::IntoIter<f64>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.vals.into_iter()
     }
 }

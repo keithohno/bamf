@@ -24,6 +24,10 @@ impl Layer {
         Layer { weights, biases }
     }
 
+    pub fn random(dims: (usize, usize), bounds: (f64, f64)) -> Layer {
+        Layer::new(Matrix::random(dims, bounds), Vector::random(dims.1, bounds))
+    }
+
     pub fn forward(&self, input: &Vector) -> Vector {
         activation::apply(
             self.weights.transpose().multiply(&input).add(&self.biases),
@@ -51,7 +55,7 @@ impl Layer {
         let dl_dy = activation::backwards(dl_dz, y, z, RELU);
 
         let dl_dx = self.weights.multiply(&dl_dy);
-        let mut dl_dw = Matrix::empty(self.weights.dims.clone());
+        let mut dl_dw = Matrix::zero((self.weights.dims[0], self.weights.dims[1]));
         for i in 0..self.weights.dims[0] {
             for j in 0..self.weights.dims[1] {
                 *dl_dw.get_mut(i, j) = x[i] * dl_dy[j];

@@ -1,59 +1,77 @@
+use rand::Rng;
+
 use crate::ops::Scale;
 use std::{ops::Index, slice::Iter};
 
 #[derive(Debug, PartialEq)]
 pub struct Vector {
-    pub dim: usize,
-    pub vals: Vec<f64>,
+    pub size: usize,
+    pub data: Vec<f64>,
 }
 
 impl Vector {
+    pub fn zero(size: usize) -> Vector {
+        Vector {
+            size,
+            data: vec![0.0; size],
+        }
+    }
+
+    pub fn random(size: usize, bounds: (f64, f64)) -> Vector {
+        let mut result = Vector::zero(size);
+        let range = bounds.1 - bounds.0;
+        for i in 0..result.size {
+            result.data[i] = rand::thread_rng().gen::<f64>() * range + bounds.0;
+        }
+        result
+    }
+
     pub fn len(&self) -> usize {
-        self.dim
+        self.size
     }
 
     pub fn softmax(&self) -> Vector {
-        let exp_sum = self.vals.iter().map(|x| x.exp()).sum::<f64>();
+        let exp_sum = self.data.iter().map(|x| x.exp()).sum::<f64>();
         Vector {
-            dim: self.dim,
-            vals: self.vals.iter().map(|x| x.exp() / exp_sum).collect(),
+            size: self.size,
+            data: self.data.iter().map(|x| x.exp() / exp_sum).collect(),
         }
     }
 
     pub fn cross_entropy_loss(&self, expected: &Vector) -> f64 {
         let cross_entropy_fn = |expected: f64, actual: f64| -expected * actual.ln();
         expected
-            .vals
+            .data
             .iter()
-            .zip(self.vals.iter())
+            .zip(self.data.iter())
             .map(|(e, a)| cross_entropy_fn(*e, *a))
             .sum::<f64>()
     }
 
     pub fn subtract(&self, vec2: &Vector) -> Vector {
-        assert!(self.dim == vec2.dim);
+        assert!(self.size == vec2.size);
         let res = self
-            .vals
+            .data
             .iter()
-            .zip(vec2.vals.iter())
+            .zip(vec2.data.iter())
             .map(|(x, y)| x - y)
             .collect::<Vec<f64>>();
         Vector::from(res)
     }
 
     pub fn add(&self, vec2: &Vector) -> Vector {
-        assert!(self.dim == vec2.dim);
+        assert!(self.size == vec2.size);
         let res = self
-            .vals
+            .data
             .iter()
-            .zip(vec2.vals.iter())
+            .zip(vec2.data.iter())
             .map(|(x, y)| x + y)
             .collect::<Vec<f64>>();
         Vector::from(res)
     }
 
     pub fn iter(&self) -> Iter<f64> {
-        return self.vals.iter();
+        return self.data.iter();
     }
 }
 
@@ -61,20 +79,20 @@ impl Index<usize> for Vector {
     type Output = f64;
 
     fn index(&self, index: usize) -> &f64 {
-        &self.vals[index]
+        &self.data[index]
     }
 }
 
 impl PartialEq<Vec<f64>> for Vector {
     fn eq(&self, vec2: &Vec<f64>) -> bool {
-        self.dim == vec2.len() && self.vals.iter().zip(vec2.iter()).all(|(x, y)| x == y)
+        self.size == vec2.len() && self.data.iter().zip(vec2.iter()).all(|(x, y)| x == y)
     }
 }
 
 impl From<Vec<f64>> for Vector {
-    fn from(vals: Vec<f64>) -> Vector {
-        let dim = vals.len();
-        Vector { dim, vals }
+    fn from(data: Vec<f64>) -> Vector {
+        let size = data.len();
+        Vector { size, data }
     }
 }
 
@@ -83,17 +101,17 @@ impl IntoIterator for Vector {
     type IntoIter = std::vec::IntoIter<f64>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.vals.into_iter()
+        self.data.into_iter()
     }
 }
 
 impl Scale<&Vector> for Vector {
     fn scale(&self, vec2: &Vector) -> Vector {
-        assert!(self.dim == vec2.dim);
+        assert!(self.size == vec2.size);
         let res = self
-            .vals
+            .data
             .iter()
-            .zip(vec2.vals.iter())
+            .zip(vec2.data.iter())
             .map(|(x, y)| x * y)
             .collect::<Vec<f64>>();
         Vector::from(res)
@@ -102,7 +120,7 @@ impl Scale<&Vector> for Vector {
 
 impl Scale<f64> for Vector {
     fn scale(&self, c: f64) -> Vector {
-        let res = self.vals.iter().map(|x| x * c).collect::<Vec<f64>>();
+        let res = self.data.iter().map(|x| x * c).collect::<Vec<f64>>();
         Vector::from(res)
     }
 }

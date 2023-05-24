@@ -1,3 +1,4 @@
+use crate::ops::Scale;
 use crate::vector::Vector;
 
 #[derive(Debug)]
@@ -10,10 +11,6 @@ pub struct Matrix {
 
 pub trait Multiply<S, T> {
     fn multiply(&self, arg: &S) -> T;
-}
-
-pub trait Scale<S> {
-    fn scale(&self, arg: &S) -> Matrix;
 }
 
 impl Matrix {
@@ -77,7 +74,7 @@ impl Multiply<Vector, Vector> for Matrix {
     }
 }
 
-impl Scale<Vector> for Matrix {
+impl Scale<&Vector> for Matrix {
     fn scale(&self, vec: &Vector) -> Matrix {
         assert!(self.dims[0] == vec.len());
         let mut result = Matrix::empty(self.dims.clone());
@@ -87,6 +84,14 @@ impl Scale<Vector> for Matrix {
                     self.data[i * self.step[0] + j * self.step[1]] * vec.vals[i];
             }
         }
+        result
+    }
+}
+
+impl Scale<f64> for Matrix {
+    fn scale(&self, c: f64) -> Matrix {
+        let mut result = Matrix::empty(self.dims.clone());
+        result.data = Box::new(self.data.iter().map(|x| x * c).collect::<Vec<f64>>());
         result
     }
 }

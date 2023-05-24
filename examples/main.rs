@@ -1,12 +1,12 @@
 use std::vec;
 
-use bamf::matrix::{Matrix, Multiply, Scale};
+use bamf::matrix::{Matrix, Multiply};
 use bamf::vector::Vector;
-use bamf::{NeuralNetwork, WeightLayer};
+use bamf::{Layer, NeuralNetwork};
 
 fn main() {
     let input = Vector::from(vec![0.0, 1.0, 2.0]);
-    let mut weights = WeightLayer::new(
+    let weights = Layer::new(
         Matrix::new(
             vec![3, 2],
             vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]],
@@ -30,33 +30,45 @@ fn main() {
     let vector = Vector::from(vec![1.0, 2.0]);
     println!("product1: {:?}", matrix.multiply(&vector));
     println!("product2: {:?}", matrix.transpose().multiply(&vector));
-    println!("product3: {:?}", matrix.scale(&vector));
-
-    let mut nn1 = NeuralNetwork::new(&mut weights, &input, bad_target);
-    nn1.forward();
-    println!("nn1: {:?}", nn1.backward());
-    let mut nn2 = NeuralNetwork::new(&mut weights, &input, good_target);
-    nn2.forward();
-    println!("nn2: {:?}", nn2.backward());
 
     repeat_nn_single_input();
 }
 
 fn repeat_nn_single_input() {
-    let mut weights = WeightLayer::new(
+    let weights1 = Layer::new(
         Matrix::new(
-            vec![3, 2],
-            vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![5.0, 6.0]],
+            vec![3, 5],
+            vec![
+                vec![1.0, 2.0, 3.0, 4.0, 5.0],
+                vec![1.0, 2.0, 1.0, 0.0, -1.0],
+                vec![-2.5, -1.3, -1.1, -0.9, -0.7],
+            ],
         ),
-        vec![5.0, 0.0],
+        vec![5.4, 3.2, 1.0, 1.2, 3.4],
     );
-    let input = Vector::from(vec![0.0, 1.0, 2.0]);
-    let mut nn1 = NeuralNetwork::new(&mut weights, &input, Vector::from(vec![0.0, 1.0]));
-    for _ in 0..100 {
-        nn1.train();
+    let weights2 = Layer::new(
+        Matrix::new(
+            vec![5, 2],
+            vec![
+                vec![1.0, 2.0],
+                vec![0.5, 0.8],
+                vec![-1.5, -0.5],
+                vec![-2.0, -1.0],
+                vec![3.0, 5.0],
+            ],
+        ),
+        vec![1.2, -1.8],
+    );
+    let mut nn = NeuralNetwork::new(vec![weights1, weights2], Vector::from(vec![0.0, 1.0]));
+    for _ in 0..20 {
+        let input = Vector::from(vec![0.0, 1.0, 2.0]);
+        nn.train(input);
+        println!("loss: {:?}", nn.loss);
     }
-    println!("loss: {:?}", nn1.loss);
-    println!("weights: {:?}", nn1.layer.weights);
-    println!("biases: {:?}", nn1.layer.biases);
-    println!("output: {:?}", nn1.intermediates.last().unwrap());
+    println!("loss: {:?}", nn.loss);
+    println!("weight1: {:?}", nn.layers[0].weights);
+    println!("bias1: {:?}", nn.layers[0].biases);
+    println!("weight2: {:?}", nn.layers[1].weights);
+    println!("bias2: {:?}", nn.layers[1].biases);
+    println!("output: {:?}", nn.intermediates.last().unwrap());
 }

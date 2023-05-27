@@ -4,6 +4,7 @@ use ops::Scale;
 use vector::Vector;
 
 pub mod activation;
+pub mod language;
 pub mod matrix;
 pub mod ops;
 pub mod vector;

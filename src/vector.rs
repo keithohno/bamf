@@ -3,7 +3,7 @@ use rand::Rng;
 use crate::ops::Scale;
 use std::{ops::Index, slice::Iter};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Vector {
     pub size: usize,
     pub data: Vec<f64>,

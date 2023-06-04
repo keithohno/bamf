@@ -4,6 +4,20 @@ use std::collections::HashMap;
 
 use crate::{vector::Vector, Layer, NeuralNetwork};
 
+pub struct Embedding {
+    pub map: HashMap<String, Vector>,
+}
+
+impl Embedding {
+    pub fn builder(codex: String) -> EmbeddingBuilder {
+        EmbeddingBuilder::new(codex)
+    }
+
+    pub fn get(&self, word: &str) -> Option<&Vector> {
+        self.map.get(word)
+    }
+}
+
 #[derive(Debug)]
 pub struct EmbeddingBuilder {
     vocab: HashMap<String, usize>,
@@ -11,6 +25,7 @@ pub struct EmbeddingBuilder {
     codex: Vec<usize>,
     codex_size: usize,
     window: usize,
+    dim: usize,
 }
 
 impl EmbeddingBuilder {
@@ -24,14 +39,21 @@ impl EmbeddingBuilder {
             codex,
             codex_size,
             window: 1,
+            dim: 1,
         }
     }
 
-    pub fn set_window(&mut self, window: usize) {
+    pub fn window(mut self, window: usize) -> Self {
         self.window = window;
+        self
     }
 
-    pub fn random_pairing(&self) -> (Vector, Vector) {
+    pub fn dim(mut self, dim: usize) -> Self {
+        self.dim = dim;
+        self
+    }
+
+    fn random_pairing(&self) -> (Vector, Vector) {
         let mut rng = thread_rng();
         let offset = rng.gen_range(1..=self.window);
         let index = rng.gen_range(0..(self.codex_size - offset));
@@ -48,9 +70,9 @@ impl EmbeddingBuilder {
         one_hot.into()
     }
 
-    pub fn train(&self, runs: usize) {
-        let nn_l1 = Layer::random((self.vocab_size, 10), (0.0, 1.0));
-        let nn_l2 = Layer::random((10, self.vocab_size), (0.0, 1.0));
+    pub fn train(&mut self, runs: usize) -> Embedding {
+        let nn_l1 = Layer::random((self.vocab_size, self.dim), (0.0, 1.0));
+        let nn_l2 = Layer::random((self.dim, self.vocab_size), (0.0, 1.0));
         let mut nn = NeuralNetwork::new(vec![nn_l1, nn_l2]);
 
         let mut loss_sum = 0.0;
@@ -66,6 +88,18 @@ impl EmbeddingBuilder {
                 }
                 _ => {}
             }
+        }
+
+        // extract embedding from hidden layer
+        let mut embedding_dict = HashMap::new();
+        for (word, num) in &self.vocab {
+            nn.forward(self.one_hot(*num));
+            let embedding = nn.intermediates[1].clone();
+            embedding_dict.insert(word.to_owned(), embedding);
+        }
+
+        Embedding {
+            map: embedding_dict,
         }
     }
 }

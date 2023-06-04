@@ -2,10 +2,12 @@ use rand::{thread_rng, Rng};
 use regex::Regex;
 use std::collections::HashMap;
 
+use crate::{vector::Vector, Layer, NeuralNetwork};
+
 #[derive(Debug)]
 pub struct EmbeddingBuilder {
     vocab: HashMap<String, usize>,
-    vocab_size: usize,
+    pub vocab_size: usize,
     codex: Vec<usize>,
     codex_size: usize,
     window: usize,
@@ -29,7 +31,7 @@ impl EmbeddingBuilder {
         self.window = window;
     }
 
-    pub fn random_pairing(&self) -> (Vec<f64>, Vec<f64>) {
+    pub fn random_pairing(&self) -> (Vector, Vector) {
         let mut rng = thread_rng();
         let offset = rng.gen_range(1..=self.window);
         let index = rng.gen_range(0..(self.codex_size - offset));
@@ -40,10 +42,31 @@ impl EmbeddingBuilder {
         (self.one_hot(num1), self.one_hot(num2))
     }
 
-    pub fn one_hot(&self, num: usize) -> Vec<f64> {
+    fn one_hot(&self, num: usize) -> Vector {
         let mut one_hot = vec![0.0; self.vocab_size];
         one_hot[num] = 1.0;
-        one_hot
+        one_hot.into()
+    }
+
+    pub fn train(&self, runs: usize) {
+        let nn_l1 = Layer::random((self.vocab_size, 10), (0.0, 1.0));
+        let nn_l2 = Layer::random((10, self.vocab_size), (0.0, 1.0));
+        let mut nn = NeuralNetwork::new(vec![nn_l1, nn_l2]);
+
+        let mut loss_sum = 0.0;
+        for i in 0..runs {
+            let (input, output) = self.random_pairing();
+            let loss = nn.train(input, &output);
+            loss_sum += loss;
+            // TODO: remove average loss printing
+            match i % 10000 {
+                0 => {
+                    println!("{}", loss_sum / 10000.0);
+                    loss_sum = 0.0;
+                }
+                _ => {}
+            }
+        }
     }
 }
 

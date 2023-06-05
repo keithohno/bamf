@@ -52,7 +52,28 @@ pub const RELU: Activation = Activation {
                 0.0
             }
         } else {
-            panic!("ReLU::backwards: z argument is None")
+            panic!("RELU::backwards: z argument is None")
+        }
+    },
+};
+
+pub const LELU: Activation = Activation {
+    function: |x| {
+        if x > 0.0 {
+            x
+        } else {
+            x / 10.0
+        }
+    },
+    derivative: |dl_dz, _, z| {
+        if let Some(z) = z {
+            if z > 0.0 {
+                dl_dz
+            } else {
+                dl_dz / 10.0
+            }
+        } else {
+            panic!("LELU::backwards: z argument is None")
         }
     },
 };

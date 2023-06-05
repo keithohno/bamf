@@ -70,6 +70,15 @@ impl Vector {
         Vector::from(res)
     }
 
+    pub fn dot(&self, vec2: &Vector) -> f64 {
+        assert!(self.size == vec2.size);
+        self.data
+            .iter()
+            .zip(vec2.data.iter())
+            .map(|(x, y)| x * y)
+            .sum::<f64>()
+    }
+
     pub fn iter(&self) -> Iter<f64> {
         return self.data.iter();
     }
@@ -146,6 +155,15 @@ mod tests {
         let vec2 = Vector::from(vec![1.2, -2.5, -3.1]);
         let expected = Vector::from(vec![3.2, 0.5, -5.1]);
         assert_eq!(vec1.add(&vec2), expected);
+    }
+
+    #[test]
+    fn test_dot() {
+        let vec1 = Vector::from(vec![2.0, 3.0]);
+        let vec2 = Vector::from(vec![1.2, -0.5]);
+        let result = vec1.dot(&vec2);
+        let expected = 0.9;
+        assert!((result - expected).abs() < EPSILON);
     }
 
     #[test]

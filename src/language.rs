@@ -115,7 +115,7 @@ pub fn tokenize(input: String) -> (Vec<usize>, HashMap<String, usize>) {
     let words = input.split_whitespace();
     let mut nums = vec![];
     let mut word_to_num = HashMap::new();
-    for (word) in words {
+    for word in words {
         match word_to_num.get(word) {
             Some(token) => nums.push(*token),
             None => {

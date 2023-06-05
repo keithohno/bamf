@@ -1,3 +1,4 @@
+use bamf::activation::RELU;
 use bamf::vector::Vector;
 use bamf::{Layer, NeuralNetwork};
 use rand::Rng;
@@ -11,8 +12,8 @@ fn run_axis_nn() -> f64 {
     const RADIUS: f64 = 0.4;
 
     let mut nn = NeuralNetwork::new(vec![
-        Layer::random((2, 12), (0.0, 1.0)),
-        Layer::random((12, 12), (0.0, 1.0)),
+        Layer::random((2, 12), (0.0, 1.0)).with_activation(RELU),
+        Layer::random((12, 12), (0.0, 1.0)).with_activation(RELU),
         Layer::random((12, 2), (0.0, 1.0)),
     ]);
 
@@ -49,8 +50,8 @@ fn run_circle_nn() -> f64 {
     const RADIUS: f64 = 0.8;
 
     let mut nn = NeuralNetwork::new(vec![
-        Layer::random((2, 12), (0.0, 1.0)),
-        Layer::random((12, 12), (0.0, 1.0)),
+        Layer::random((2, 12), (0.0, 1.0)).with_activation(RELU),
+        Layer::random((12, 12), (0.0, 1.0)).with_activation(RELU),
         Layer::random((12, 2), (0.0, 1.0)),
     ]);
 

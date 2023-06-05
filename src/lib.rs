@@ -1,4 +1,4 @@
-use activation::RELU;
+use activation::Activation;
 use matrix::{Matrix, Multiply};
 use ops::Scale;
 use vector::Vector;
@@ -13,6 +13,7 @@ pub mod vector;
 pub struct Layer {
     pub weights: Matrix,
     pub biases: Vector,
+    activation: Option<Activation>,
 }
 
 impl Layer {
@@ -22,7 +23,16 @@ impl Layer {
     {
         let biases = biases.into();
         assert!(weights.dims[1] == biases.len());
-        Layer { weights, biases }
+        Layer {
+            weights,
+            biases,
+            activation: None,
+        }
+    }
+
+    pub fn with_activation(mut self, activation: Activation) -> Self {
+        self.activation = Some(activation);
+        self
     }
 
     pub fn random(dims: (usize, usize), bounds: (f64, f64)) -> Layer {
@@ -30,10 +40,12 @@ impl Layer {
     }
 
     pub fn forward(&self, input: &Vector) -> Vector {
-        activation::apply(
-            self.weights.transpose().multiply(&input).add(&self.biases),
-            RELU,
-        )
+        let output = self.weights.transpose().multiply(&input).add(&self.biases);
+        if let Some(activation) = &self.activation {
+            activation.apply(output)
+        } else {
+            output
+        }
     }
 
     /// Computes the gradient of the loss wrt the input of the layer (x), the weights (w), and the biases (b).
@@ -53,7 +65,11 @@ impl Layer {
         y: Option<&Vector>,
         z: Option<&Vector>,
     ) -> (Vector, Matrix, Vector) {
-        let dl_dy = activation::backwards(dl_dz, y, z, RELU);
+        let dl_dy = if let Some(activation) = &self.activation {
+            activation.backpropagate(dl_dz, y, z)
+        } else {
+            dl_dz.clone()
+        };
 
         let dl_dx = self.weights.multiply(&dl_dy);
         let mut dl_dw = Matrix::zero((self.weights.dims[0], self.weights.dims[1]));

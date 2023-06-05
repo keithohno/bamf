@@ -2,7 +2,7 @@ use rand::{thread_rng, Rng};
 use regex::Regex;
 use std::collections::HashMap;
 
-use crate::{vector::Vector, Layer, NeuralNetwork};
+use crate::{activation::RELU, vector::Vector, Layer, NeuralNetwork};
 
 pub struct Embedding {
     pub map: HashMap<String, Vector>,
@@ -71,7 +71,7 @@ impl EmbeddingBuilder {
     }
 
     pub fn train(&mut self, runs: usize) -> Embedding {
-        let nn_l1 = Layer::random((self.vocab_size, self.dim), (0.0, 1.0));
+        let nn_l1 = Layer::random((self.vocab_size, self.dim), (0.0, 1.0)).with_activation(RELU);
         let nn_l2 = Layer::random((self.dim, self.vocab_size), (0.0, 1.0));
         let mut nn = NeuralNetwork::new(vec![nn_l1, nn_l2]);
 

@@ -113,6 +113,7 @@ impl NeuralNetwork {
             .cross_entropy_loss(target)
     }
 
+    // returns loss
     pub fn train(&mut self, input: Vector, target: &Vector) -> f64 {
         self.forward(input);
         let loss = self.loss(target);

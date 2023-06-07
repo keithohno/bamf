@@ -6,6 +6,7 @@ use crate::{activation::LELU, vector::Vector, Layer, NeuralNetwork};
 
 pub struct Embedding {
     pub word_to_embed: HashMap<String, Vector>,
+    pub word_to_num: HashMap<String, usize>,
     pub num_to_word: Vec<String>,
     pub dim: usize,
 }
@@ -105,6 +106,7 @@ impl EmbeddingBuilder {
         Embedding {
             word_to_embed,
             num_to_word: self.num_to_word.clone(),
+            word_to_num: self.word_to_num.clone(),
             dim: self.dim,
         }
     }

@@ -11,14 +11,13 @@ use bamf::{
 fn main() {
     let input_text = read_to_string("examples/your_name.txt").unwrap();
     let embedding = Embedding::builder(input_text)
-        .window(5)
-        .dim(10)
-        .train(100000);
+        .window(3)
+        .dim(32)
+        .train(500000);
 
     // first (dynamic) nn layer: input -> embedding
     let dict_size = embedding.num_to_word.len();
     let nn_l1 = Layer::random((embedding.dim, embedding.dim), (0.0, 1.0)).with_activation(LELU);
-    println!("{:?}", nn_l1.weights.dims);
 
     // second (static) nn layer: embedding -> prediction
     let mut embeddings_arr: Vec<Vec<f64>> = vec![];
@@ -33,31 +32,34 @@ fn main() {
         );
     }
     let embedding_to_prediction_matrix = Matrix::from(embeddings_arr).transpose();
-    println!("{:?}", embedding_to_prediction_matrix.dims);
-    let nn_l2 = Layer::new(embedding_to_prediction_matrix, Vector::zero(dict_size));
+    let mut nn_l2 = Layer::new(embedding_to_prediction_matrix, Vector::zero(dict_size));
+    nn_l2.set_constant();
 
     // combine layers into nn
     let mut nn = NeuralNetwork::new(vec![nn_l1, nn_l2]);
 
+    // process training data / input text
     let input_text = read_to_string("examples/your_name.txt").unwrap();
     let words = clean(input_text)
         .split_whitespace()
         .map(|s| s.to_owned())
         .collect::<Vec<String>>();
 
-    for i in 0..words.len() - 1 {
-        let input_embedding = embedding.get(&words[i]).unwrap().clone();
-        let mut target_one_hot = Vector::zero(dict_size);
-        target_one_hot.data[*embedding.word_to_num.get(&words[i + 1]).unwrap()] = 1.0;
-        nn.train(input_embedding, &target_one_hot);
+    // train nn (100 epochs)
+    for _ in 0..100 {
+        for i in 0..words.len() - 1 {
+            let input_embedding = embedding.get(&words[i]).unwrap().clone();
+            let mut target_one_hot = Vector::zero(dict_size);
+            target_one_hot.data[*embedding.word_to_num.get(&words[i + 1]).unwrap()] = 1.0;
+            nn.train(input_embedding, &target_one_hot);
+        }
     }
 
-    let mut word = "your".to_owned();
-    for _ in 0..100 {
-        print!("{} ", word);
-        let output = nn.forward(embedding.get(&word).unwrap().clone());
-        let prediction = max_index(&output.data);
-        word = embedding.num_to_word[prediction].clone();
+    // predict next word for all words in dictionary
+    for word in &embedding.num_to_word {
+        let output = nn.forward(embedding.get(word).unwrap().clone());
+        let prediction = &embedding.num_to_word[max_index(&output.data)];
+        println!("{} -> {}", word, prediction);
     }
 }
 

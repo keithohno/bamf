@@ -11,6 +11,7 @@ pub mod vector;
 
 #[derive(Debug)]
 pub struct Layer {
+    pub constant: bool,
     pub weights: Matrix,
     pub biases: Vector,
     activation: Option<Activation>,
@@ -24,10 +25,15 @@ impl Layer {
         let biases = biases.into();
         assert!(weights.dims[1] == biases.len());
         Layer {
+            constant: false,
             weights,
             biases,
             activation: None,
         }
+    }
+
+    pub fn set_constant(&mut self) {
+        self.constant = true;
     }
 
     pub fn with_activation(mut self, activation: Activation) -> Self {
@@ -135,6 +141,9 @@ impl NeuralNetwork {
         let loss = self.loss(target);
         let gradients = self.backward(target);
         for (i, (dl_dw, dl_db)) in gradients.iter().enumerate() {
+            if (self.layers[i].constant) {
+                continue;
+            }
             self.layers[i].weights = self.layers[i].weights.subtract(&dl_dw.scale(0.1));
             self.layers[i].biases = self.layers[i].biases.subtract(&dl_db.scale(0.1));
         }

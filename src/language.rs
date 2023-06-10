@@ -5,7 +5,10 @@ use std::collections::HashMap;
 use crate::{activation::LELU, vector::Vector, Layer, NeuralNetwork};
 
 pub struct Embedding {
-    pub map: HashMap<String, Vector>,
+    pub word_to_embed: HashMap<String, Vector>,
+    pub word_to_num: HashMap<String, usize>,
+    pub num_to_word: Vec<String>,
+    pub dim: usize,
 }
 
 impl Embedding {
@@ -14,14 +17,15 @@ impl Embedding {
     }
 
     pub fn get(&self, word: &str) -> Option<&Vector> {
-        self.map.get(word)
+        self.word_to_embed.get(word)
     }
 }
 
 #[derive(Debug)]
 pub struct EmbeddingBuilder {
-    vocab: HashMap<String, usize>,
-    pub vocab_size: usize,
+    word_to_num: HashMap<String, usize>,
+    num_to_word: Vec<String>,
+    pub dict_size: usize,
     codex: Vec<usize>,
     codex_size: usize,
     window: usize,
@@ -30,12 +34,13 @@ pub struct EmbeddingBuilder {
 
 impl EmbeddingBuilder {
     pub fn new(input: String) -> EmbeddingBuilder {
-        let (codex, vocab) = tokenize(clean(input));
-        let vocab_size = vocab.len();
+        let (codex, word_to_num, num_to_word) = tokenize(clean(input));
+        let vocab_size = word_to_num.len();
         let codex_size = codex.len();
         EmbeddingBuilder {
-            vocab,
-            vocab_size,
+            word_to_num,
+            num_to_word,
+            dict_size: vocab_size,
             codex,
             codex_size,
             window: 1,
@@ -65,14 +70,14 @@ impl EmbeddingBuilder {
     }
 
     fn one_hot(&self, num: usize) -> Vector {
-        let mut one_hot = vec![0.0; self.vocab_size];
+        let mut one_hot = vec![0.0; self.dict_size];
         one_hot[num] = 1.0;
         one_hot.into()
     }
 
     pub fn train(&mut self, runs: usize) -> Embedding {
-        let nn_l1 = Layer::random((self.vocab_size, self.dim), (0.0, 1.0)).with_activation(LELU);
-        let nn_l2 = Layer::random((self.dim, self.vocab_size), (0.0, 1.0));
+        let nn_l1 = Layer::random((self.dict_size, self.dim), (0.0, 1.0)).with_activation(LELU);
+        let nn_l2 = Layer::random((self.dim, self.dict_size), (0.0, 1.0));
         let mut nn = NeuralNetwork::new(vec![nn_l1, nn_l2]);
 
         let mut loss_sum = 0.0;
@@ -91,15 +96,18 @@ impl EmbeddingBuilder {
         }
 
         // extract embedding from hidden layer
-        let mut embedding_dict = HashMap::new();
-        for (word, num) in &self.vocab {
+        let mut word_to_embed = HashMap::new();
+        for (word, num) in &self.word_to_num {
             nn.forward(self.one_hot(*num));
             let embedding = nn.intermediates[1].clone();
-            embedding_dict.insert(word.to_owned(), embedding);
+            word_to_embed.insert(word.to_owned(), embedding);
         }
 
         Embedding {
-            map: embedding_dict,
+            word_to_embed,
+            num_to_word: self.num_to_word.clone(),
+            word_to_num: self.word_to_num.clone(),
+            dim: self.dim,
         }
     }
 }
@@ -111,19 +119,21 @@ pub fn clean(input: String) -> String {
     re.replace_all(&input, " ").to_lowercase().to_string()
 }
 
-pub fn tokenize(input: String) -> (Vec<usize>, HashMap<String, usize>) {
+pub fn tokenize(input: String) -> (Vec<usize>, HashMap<String, usize>, Vec<String>) {
     let words = input.split_whitespace();
     let mut nums = vec![];
     let mut word_to_num = HashMap::new();
+    let mut num_to_word = vec![];
     for word in words {
         match word_to_num.get(word) {
-            Some(token) => nums.push(*token),
+            Some(num) => nums.push(*num),
             None => {
-                let token = word_to_num.len();
-                nums.push(token);
-                word_to_num.insert(word.to_owned(), token);
+                let num = word_to_num.len();
+                nums.push(num);
+                word_to_num.insert(word.to_owned(), num);
+                num_to_word.push(word.to_owned());
             }
         }
     }
-    (nums, word_to_num)
+    (nums, word_to_num, num_to_word)
 }
